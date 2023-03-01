@@ -22,7 +22,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "avoidWilderness",
         name = "Avoid wilderness",
         description = "Whether the wilderness should be avoided if possible<br>" +
-                "(otherwise, will e.g. suggest using wilderness lever to travel from Edgeville to Ardougne)",
+            "(otherwise, will e.g. suggest using wilderness lever to travel from Edgeville to Ardougne)",
         position = 1,
         section = sectionSettings
     )
@@ -45,7 +45,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "useGrappleShortcuts",
         name = "Use grapple shortcuts",
         description = "Whether to include crossbow grapple agility shortcuts in the path.<br>" +
-                "You must also have the required agility, ranged and strength levels",
+            "You must also have the required agility, ranged and strength levels",
         position = 3,
         section = sectionSettings
     )
@@ -68,7 +68,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "useFairyRings",
         name = "Use fairy rings",
         description = "Whether to include fairy rings in the path.<br>" +
-                "You must also have completed the required quest or miniquest",
+            "You must also have completed the required quest or miniquest",
         position = 5,
         section = sectionSettings
     )
@@ -162,7 +162,7 @@ public interface ShortestPathConfig extends Config {
         keyName = "calculationCutoff",
         name = "Calculation cutoff",
         description = "The cutoff threshold in number of ticks (0.6 seconds) of no progress being<br>" +
-                "made towards the path target before the calculation will be stopped",
+            "made towards the path target before the calculation will be stopped",
         position = 12,
         section = sectionSettings
     )
