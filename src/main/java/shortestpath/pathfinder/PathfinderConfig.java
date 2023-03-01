@@ -1,5 +1,8 @@
 package shortestpath.pathfinder;
 
+import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -100,7 +103,7 @@ public class PathfinderConfig {
             return true;
         }
         return config.recalculateDistance() < 0 ||
-               client.getLocalPlayer().getWorldLocation().distanceTo2D(location) <= config.recalculateDistance();
+                client.getLocalPlayer().getWorldLocation().distanceTo2D(location) <= config.recalculateDistance();
     }
 
     public boolean useTransport(Transport transport) {
@@ -156,5 +159,34 @@ public class PathfinderConfig {
         }
 
         return true;
+    }
+
+    public void exportPathToClipboard(List<WorldPoint> path) {
+        if (!config.exportPathToClipboard()) {
+            return;
+        }
+
+        int last_diff_x = 0;
+        int last_diff_y = 0;
+        int diff_x = 0;
+        int diff_y = 0;
+        WorldPoint last = path.get(0);
+        String coords = "{{Map|";
+        for (int i = 1; i < path.size(); i++) {
+            WorldPoint point = path.get(i);
+            diff_x = point.getX() - last.getX();
+            diff_y = point.getY() - last.getY();
+            if ((diff_x != last_diff_x) || (diff_y != last_diff_y)) {
+                coords += last.getX() + "," + last.getY() + "|";
+                last_diff_x = diff_x;
+                last_diff_y = diff_y;
+            }
+            last = point;
+        }
+        coords += last.getX() + "," + last.getY();
+        coords += "|mapID=-1|mtype=line}}";
+        StringSelection stringSelection = new StringSelection(coords);
+        Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+        clipboard.setContents(stringSelection, null);
     }
 }

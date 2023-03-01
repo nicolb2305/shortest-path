@@ -92,6 +92,7 @@ public class Pathfinder implements Runnable {
             addNeighbors(node);
         }
 
+        this.config.exportPathToClipboard(path);
         done = true;
         boundary.clear();
         visited.clear();
