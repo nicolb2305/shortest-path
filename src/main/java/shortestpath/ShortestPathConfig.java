@@ -316,4 +316,38 @@ public interface ShortestPathConfig extends Config {
     default boolean exportPathToClipboard() {
         return false;
     }
+
+    @ConfigItem(
+            keyName = "exportFormat",
+            name = "Export format",
+            description = "What format the export should be in",
+            position = 27,
+            section = sectionExport
+    )
+    default CopyType exportFormat() {
+        return CopyType.wiki;
+    }
+
+    @Range(min=-1)
+    @ConfigItem(
+            keyName = "mapID",
+            name = "mapID",
+            description = "Which mapID to use for the export",
+            position = 28,
+            section = sectionExport
+    )
+    default int mapID() {
+        return -1;
+    }
+
+    @ConfigItem(
+            keyName = "stroke",
+            name = "Line color",
+            description = "Color of the line, only works with Geo Json",
+            position = 29,
+            section = sectionExport
+    )
+    default Color stroke() {
+        return new Color(51, 136, 255);
+    }
 }

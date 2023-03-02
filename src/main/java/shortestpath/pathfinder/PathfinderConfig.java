@@ -4,16 +4,15 @@ import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import lombok.Getter;
-import net.runelite.api.Client;
-import net.runelite.api.Constants;
-import net.runelite.api.GameState;
-import net.runelite.api.Quest;
-import net.runelite.api.QuestState;
-import net.runelite.api.Skill;
+import net.runelite.api.*;
 import net.runelite.api.coords.WorldArea;
 import net.runelite.api.coords.WorldPoint;
 import shortestpath.ShortestPathConfig;
@@ -161,31 +160,109 @@ public class PathfinderConfig {
         return true;
     }
 
+    private List<ExportPath> calculatePath(List<WorldPoint> path) {
+        List<ExportPath> path_components = new ArrayList<>();
+        List<int[]> current_path = new ArrayList<>();
+
+        int plane;
+        int diff_x;
+        int diff_y;
+        boolean plane_change;
+
+        WorldPoint last = path.get(0);
+        int last_plane = last.getPlane();
+        int last_diff_x = 0;
+        int last_diff_y = 0;
+
+        for (WorldPoint point : path) {
+            diff_x = point.getX() - last.getX();
+            diff_y = point.getY() - last.getY();
+            plane = point.getPlane();
+            plane_change = plane != last_plane;
+            if ((diff_x != last_diff_x) || (diff_y != last_diff_y) || plane_change) {
+                int[] coords = {last.getX(), last.getY()};
+                current_path.add(coords);
+            }
+            if (plane_change) {
+                path_components.add(new ExportPath(last.getPlane(), current_path));
+                current_path = new ArrayList<>();
+            }
+            last = point;
+            last_diff_x = diff_x;
+            last_diff_y = diff_y;
+            last_plane = point.getPlane();
+        }
+        int[] coords = {last.getX(), last.getY()};
+        current_path.add(coords);
+        path_components.add(new ExportPath(last.getPlane(), current_path));
+
+        return path_components;
+    }
+
+    private String createWikiMap(List<ExportPath> calculated_path) {
+        StringBuilder out_string = new StringBuilder();
+        for (ExportPath path_component : calculated_path) {
+            out_string.append("{{Map|");
+            for (int[] coordinate : path_component.path) {
+                out_string.append(String.format("%d,%d|", coordinate[0], coordinate[1]));
+            }
+            out_string.append(String.format("mapID=%d|plane=%d|mtype=line}}", config.mapID(), path_component.plane));
+        }
+        return out_string.toString();
+    }
+
+    private String createGeoJson(List<ExportPath> calculated_path) {
+        JsonObject geojson = new JsonObject();
+        geojson.addProperty("type", "FeatureCollection");
+        JsonArray features = new JsonArray();
+        for (ExportPath path_component : calculated_path) {
+            JsonObject feature = new JsonObject();
+
+            JsonObject properties = new JsonObject();
+            Color color = config.stroke();
+            String colorHex = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
+            properties.addProperty("mapID", config.mapID());
+            properties.addProperty("plane", path_component.plane);
+            properties.addProperty("stroke", colorHex);
+
+            JsonObject geometry = new JsonObject();
+            JsonArray coordinates = new JsonArray();
+            for (int[] coordinate : path_component.path) {
+                JsonArray coordinate_array = new JsonArray(2);
+                coordinate_array.add(coordinate[0]);
+                coordinate_array.add(coordinate[1]);
+                coordinates.add(coordinate_array);
+            }
+            geometry.addProperty("type", "LineString");
+            geometry.add("coordinates", coordinates);
+
+            feature.addProperty("type", "Feature");
+            feature.add("properties", properties);
+            feature.add("geometry", geometry);
+
+            features.add(feature);
+        }
+        geojson.add("features", features);
+
+        return geojson.toString();
+    }
+
     public void exportPathToClipboard(List<WorldPoint> path) {
         if (!config.exportPathToClipboard()) {
             return;
         }
 
-        int last_diff_x = 0;
-        int last_diff_y = 0;
-        int diff_x = 0;
-        int diff_y = 0;
-        WorldPoint last = path.get(0);
-        String coords = "{{Map|";
-        for (int i = 1; i < path.size(); i++) {
-            WorldPoint point = path.get(i);
-            diff_x = point.getX() - last.getX();
-            diff_y = point.getY() - last.getY();
-            if ((diff_x != last_diff_x) || (diff_y != last_diff_y)) {
-                coords += last.getX() + "," + last.getY() + "|";
-                last_diff_x = diff_x;
-                last_diff_y = diff_y;
-            }
-            last = point;
+        List<ExportPath> calculated_path = calculatePath(path);
+        String out_string;
+        switch (config.exportFormat()) {
+            case wiki: out_string = createWikiMap(calculated_path);
+                break;
+            case geo_json: out_string = createGeoJson(calculated_path);
+                break;
+            default: out_string = "";
         }
-        coords += last.getX() + "," + last.getY();
-        coords += "|mapID=-1|mtype=line}}";
-        StringSelection stringSelection = new StringSelection(coords);
+
+        StringSelection stringSelection = new StringSelection(out_string);
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, null);
     }
