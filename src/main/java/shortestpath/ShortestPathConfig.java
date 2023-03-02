@@ -349,7 +349,7 @@ public interface ShortestPathConfig extends Config {
             section = sectionExport
     )
     default Color stroke() {
-        return new Color(51, 136, 255, 1);
+        return new Color(51, 136, 255, 255);
     }
 
     @Units(Units.PIXELS)
