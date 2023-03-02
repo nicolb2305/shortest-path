@@ -340,14 +340,38 @@ public interface ShortestPathConfig extends Config {
         return -1;
     }
 
+    @Alpha
     @ConfigItem(
             keyName = "stroke",
             name = "Line color",
-            description = "Color of the line, only works with Geo Json",
+            description = "Color of the line<br/>Only works with Geo Json",
             position = 29,
             section = sectionExport
     )
     default Color stroke() {
-        return new Color(51, 136, 255);
+        return new Color(51, 136, 255, 1);
+    }
+
+    @Units(Units.PIXELS)
+    @ConfigItem(
+            keyName = "width",
+            name = "Line width",
+            description = "Width of the line<br/>Only works with Geo Json",
+            position = 30,
+            section = sectionExport
+    )
+    default int width() {
+        return 3;
+    }
+
+    @ConfigItem(
+            keyName = "title",
+            name = "Description",
+            description = "Description of the line<br/>Only works with Geo Json",
+            position = 31,
+            section = sectionExport
+    )
+    default String title() {
+        return "";
     }
 }

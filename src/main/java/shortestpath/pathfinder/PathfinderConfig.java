@@ -224,6 +224,11 @@ public class PathfinderConfig {
             properties.addProperty("mapID", config.mapID());
             properties.addProperty("plane", path_component.plane);
             properties.addProperty("stroke", colorHex);
+            properties.addProperty("stroke-width", config.width());
+            properties.addProperty("stroke-opacity", (float) color.getAlpha()/255);
+            if (!config.title().equals("")) {
+                properties.addProperty("title", config.title());
+            }
 
             JsonObject geometry = new JsonObject();
             JsonArray coordinates = new JsonArray();
