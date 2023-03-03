@@ -172,7 +172,7 @@ public class PathfinderConfig {
         int plane;
         int diff_x;
         int diff_y;
-        boolean plane_change;
+        boolean new_component;
 
         WorldPoint last = path.get(0);
         int last_plane = last.getPlane();
@@ -183,12 +183,12 @@ public class PathfinderConfig {
             diff_x = point.getX() - last.getX();
             diff_y = point.getY() - last.getY();
             plane = point.getPlane();
-            plane_change = plane != last_plane;
-            if ((diff_x != last_diff_x) || (diff_y != last_diff_y) || plane_change) {
+            new_component = (plane != last_plane) || (diff_x > 1000) || (diff_y > 1000);
+            if ((diff_x != last_diff_x) || (diff_y != last_diff_y) || new_component) {
                 int[] coords = {last.getX(), last.getY()};
                 current_path.add(coords);
             }
-            if (plane_change) {
+            if (new_component) {
                 path_components.add(new ExportPath(last.getPlane(), current_path));
                 current_path = new ArrayList<>();
             }
@@ -230,7 +230,7 @@ public class PathfinderConfig {
             properties.addProperty("plane", path_component.plane);
             properties.addProperty("stroke", colorHex);
             properties.addProperty("stroke-width", config.width());
-            properties.addProperty("stroke-opacity", (float) color.getAlpha()/255);
+            properties.addProperty("stroke-opacity", color.getAlpha()/(float)255);
             if (!config.title().equals("")) {
                 properties.addProperty("title", config.title());
             }
