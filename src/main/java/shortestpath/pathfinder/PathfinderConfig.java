@@ -252,7 +252,7 @@ public class PathfinderConfig {
             properties.addProperty("plane", path_component.plane);
             properties.addProperty("stroke", colorHex);
             properties.addProperty("stroke-width", config.width());
-            properties.addProperty("stroke-opacity", color.getAlpha()/(float)255);
+            properties.addProperty("stroke-opacity", ((100 * color.getAlpha())/255)/(float)100);
             if (!config.title().equals("")) {
                 properties.addProperty("title", config.title());
             }
