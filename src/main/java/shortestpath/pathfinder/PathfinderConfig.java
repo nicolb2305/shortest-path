@@ -1,8 +1,9 @@
 package shortestpath.pathfinder;
 
-import java.awt.*;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
+import java.awt.Color;
+import java.awt.Toolkit;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -167,74 +168,87 @@ public class PathfinderConfig {
         return true;
     }
 
-    private List<ExportPath> calculatePath(List<WorldPoint> path) {
-        List<ExportPath> path_components = new ArrayList<>();
-        List<int[]> current_path = new ArrayList<>();
-
-        int plane;
+    private List<WorldPoint> optimizePath(List<WorldPoint> path) {
+        WorldPoint current = path.get(1);
         int diff_x;
         int diff_y;
-        boolean new_component = true;
 
-        WorldPoint last = path.get(0);
-        int last_last_plane = 0;
-        int last_diff_x = 0;
-        int last_diff_y = 0;
+        WorldPoint previous = path.get(0);
+        // Reverse order to ensure first point changes direction
+        int last_diff_x = previous.getX() - current.getX();
+        int last_diff_y = previous.getY() - current.getY();
 
-        for (WorldPoint point : path) {
-            diff_x = point.getX() - last.getX();
-            diff_y = point.getY() - last.getY();
-            plane = point.getPlane();
-            if (new_component) {
-                current_path = new ArrayList<>();
-                int[] coords = {last.getX(), last.getY()};
-                current_path.add(coords);
-                new_component = false;
-            } else {
-                new_component = (plane != last.getPlane()) || (abs(diff_x) > 1000) || (abs(diff_y) > 1000);
-                if ((diff_x != last_diff_x) || (diff_y != last_diff_y) || new_component) {
-                    int[] coords = {last.getX(), last.getY()};
-                    current_path.add(coords);
-                }
-                if (new_component) {
-                    path_components.add(new ExportPath(last_last_plane, current_path));
-                }
+        for (int i = 1; i < path.size(); i++) {
+            current = path.get(i);
+            diff_x = current.getX() - previous.getX();
+            diff_y = current.getY() - previous.getY();
+            if ((diff_x == last_diff_x) && (diff_y == last_diff_y)) {
+                path.remove(i-1);
+                i -= 1;
             }
-            last_last_plane = last.getPlane();
-            last = point;
+            previous = current;
             last_diff_x = diff_x;
             last_diff_y = diff_y;
         }
-        int[] coords = {last.getX(), last.getY()};
-        current_path.add(coords);
-        path_components.add(new ExportPath(last.getPlane(), current_path));
+
+        return path;
+    }
+
+    private List<PathWithPlaneMapID> splitPath(List<WorldPoint> path) {
+        List<PathWithPlaneMapID> path_components = new ArrayList<>();
+
+        int start_index = 0;
+        int end_index;
+        int mapID;
+
+        WorldPoint current;
+        WorldPoint previous = path.get(0);
+
+        List<WorldPoint> optimized_path;
+
+        for (int i = 1; i < path.size(); i++) {
+            current = path.get(i);
+            if (
+                (current.getPlane() != previous.getPlane()) ||
+                (abs(current.getX() - previous.getX()) > 1000) ||
+                (abs(current.getY() - previous.getY()) > 1000) ||
+                (i == path.size() - 1)
+            ) {
+                mapID = previous.getY() < 4150 && previous.getY() > 2500 ? 0 : -1;
+                end_index = i != path.size() - 1 ? i : i + 1;
+                optimized_path = optimizePath(new ArrayList<>(path.subList(start_index, end_index)));
+                path_components.add(new PathWithPlaneMapID(previous.getPlane(), mapID, optimized_path));
+                start_index = i;
+            }
+            previous = current;
+        }
 
         return path_components;
     }
 
-    private String createWikiMap(List<ExportPath> calculated_path) {
+    private String createWikiMap(List<PathWithPlaneMapID> calculated_path) {
         StringBuilder out_string = new StringBuilder();
-        for (ExportPath path_component : calculated_path) {
+        for (PathWithPlaneMapID path_component : calculated_path) {
             out_string.append("{{Map|");
-            for (int[] coordinate : path_component.path) {
-                out_string.append(String.format("%d,%d|", coordinate[0], coordinate[1]));
+            for (WorldPoint coordinate : path_component.path) {
+                out_string.append(String.format("%d,%d|", coordinate.getX(), coordinate.getY()));
             }
-            out_string.append(String.format("mapID=%d|plane=%d|mtype=line}}", config.mapID(), path_component.plane));
+            out_string.append(String.format("mapID=%d|plane=%d|mtype=line}}\n", path_component.mapID, path_component.plane));
         }
         return out_string.toString();
     }
 
-    private String createGeoJson(List<ExportPath> calculated_path) {
+    private String createGeoJson(List<PathWithPlaneMapID> calculated_path) {
         JsonObject geojson = new JsonObject();
         geojson.addProperty("type", "FeatureCollection");
         JsonArray features = new JsonArray();
-        for (ExportPath path_component : calculated_path) {
+        for (PathWithPlaneMapID path_component : calculated_path) {
             JsonObject feature = new JsonObject();
 
             JsonObject properties = new JsonObject();
             Color color = config.stroke();
             String colorHex = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
-            properties.addProperty("mapID", config.mapID());
+            properties.addProperty("mapID", path_component.mapID);
             properties.addProperty("plane", path_component.plane);
             properties.addProperty("stroke", colorHex);
             properties.addProperty("stroke-width", config.width());
@@ -245,10 +259,10 @@ public class PathfinderConfig {
 
             JsonObject geometry = new JsonObject();
             JsonArray coordinates = new JsonArray();
-            for (int[] coordinate : path_component.path) {
+            for (WorldPoint coordinate : path_component.path) {
                 JsonArray coordinate_array = new JsonArray(2);
-                coordinate_array.add(coordinate[0]);
-                coordinate_array.add(coordinate[1]);
+                coordinate_array.add(coordinate.getX());
+                coordinate_array.add(coordinate.getY());
                 coordinates.add(coordinate_array);
             }
             geometry.addProperty("type", "LineString");
@@ -270,7 +284,7 @@ public class PathfinderConfig {
             return;
         }
 
-        List<ExportPath> calculated_path = calculatePath(path);
+        List<PathWithPlaneMapID> calculated_path = splitPath(path);
         String out_string;
         switch (config.exportFormat()) {
             case wiki: out_string = createWikiMap(calculated_path);

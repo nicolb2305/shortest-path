@@ -328,24 +328,12 @@ public interface ShortestPathConfig extends Config {
         return CopyType.wiki;
     }
 
-    @Range(min=-1)
-    @ConfigItem(
-            keyName = "mapID",
-            name = "mapID",
-            description = "Which mapID to use for the export",
-            position = 28,
-            section = sectionExport
-    )
-    default int mapID() {
-        return -1;
-    }
-
     @Alpha
     @ConfigItem(
             keyName = "stroke",
             name = "Line color",
             description = "Color of the line<br/>Only works with Geo Json",
-            position = 29,
+            position = 28,
             section = sectionExport
     )
     default Color stroke() {
@@ -357,7 +345,7 @@ public interface ShortestPathConfig extends Config {
             keyName = "width",
             name = "Line width",
             description = "Width of the line<br/>Only works with Geo Json",
-            position = 30,
+            position = 29,
             section = sectionExport
     )
     default int width() {
@@ -368,7 +356,7 @@ public interface ShortestPathConfig extends Config {
             keyName = "title",
             name = "Description",
             description = "Description of the line<br/>Only works with Geo Json",
-            position = 31,
+            position = 30,
             section = sectionExport
     )
     default String title() {
