@@ -25,7 +25,6 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.Transport;
 
-import static java.lang.Math.abs;
 
 public class PathfinderConfig {
     private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3523, 448, 448, 0);
@@ -200,6 +199,7 @@ public class PathfinderConfig {
         int start_index = 0;
         int end_index;
         int mapID;
+        int dist;
 
         WorldPoint current;
         WorldPoint previous = path.get(0);
@@ -208,16 +208,16 @@ public class PathfinderConfig {
 
         for (int i = 1; i < path.size(); i++) {
             current = path.get(i);
-            if (
-                (current.getPlane() != previous.getPlane()) ||
-                (abs(current.getX() - previous.getX()) > 1000) ||
-                (abs(current.getY() - previous.getY()) > 1000) ||
-                (i == path.size() - 1)
+            dist = current.distanceTo(previous);
+            if ((current.getPlane() != previous.getPlane()) || (dist > 1) || (i == path.size() - 1)
             ) {
                 mapID = previous.getY() < 4150 && previous.getY() > 2500 ? 0 : -1;
                 end_index = i != path.size() - 1 ? i : i + 1;
                 optimized_path = optimizePath(new ArrayList<>(path.subList(start_index, end_index)));
-                path_components.add(new PathWithPlaneMapID(previous.getPlane(), mapID, optimized_path));
+                path_components.add(new PathWithPlaneMapID(previous.getPlane(), mapID, false, optimized_path));
+                if ((dist < 1000) && (i != path.size() - 1)) {
+                    path_components.add(new PathWithPlaneMapID(previous.getPlane(), mapID, true, new ArrayList<>(path.subList(i-1, i+1))));
+                }
                 start_index = i;
             }
             previous = current;
@@ -246,12 +246,21 @@ public class PathfinderConfig {
             JsonObject feature = new JsonObject();
 
             JsonObject properties = new JsonObject();
-            Color color = config.stroke();
+
+            Color color;
+            int width;
+            if (path_component.transport) {
+                color = config.strokeTransport();
+                width = config.widthTransport();
+            } else {
+                color = config.stroke();
+                width = config.width();
+            }
             String colorHex = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
             properties.addProperty("mapID", path_component.mapID);
             properties.addProperty("plane", path_component.plane);
             properties.addProperty("stroke", colorHex);
-            properties.addProperty("stroke-width", config.width());
+            properties.addProperty("stroke-width", width);
             properties.addProperty("stroke-opacity", ((100 * color.getAlpha())/255)/(float)100);
             if (!config.title().equals("")) {
                 properties.addProperty("title", config.title());
