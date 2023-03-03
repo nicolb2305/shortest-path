@@ -287,9 +287,9 @@ public class PathfinderConfig {
         List<PathWithPlaneMapID> calculated_path = splitPath(path);
         String out_string;
         switch (config.exportFormat()) {
-            case wiki: out_string = createWikiMap(calculated_path);
+            case WIKI: out_string = createWikiMap(calculated_path);
                 break;
-            case geo_json: out_string = createGeoJson(calculated_path);
+            case GEO_JSON: out_string = createGeoJson(calculated_path);
                 break;
             default: out_string = "";
         }

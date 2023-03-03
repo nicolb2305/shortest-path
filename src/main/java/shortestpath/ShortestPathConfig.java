@@ -324,8 +324,8 @@ public interface ShortestPathConfig extends Config {
             position = 27,
             section = sectionExport
     )
-    default CopyType exportFormat() {
-        return CopyType.wiki;
+    default ExportType exportFormat() {
+        return ExportType.WIKI;
     }
 
     @Alpha
