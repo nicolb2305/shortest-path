@@ -25,7 +25,6 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.Transport;
 
-
 public class PathfinderConfig {
     private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3523, 448, 448, 0);
     private static final WorldArea WILDERNESS_UNDERGROUND = new WorldArea(2944, 9918, 320, 442, 0);
@@ -203,22 +202,26 @@ public class PathfinderConfig {
 
         WorldPoint current;
         WorldPoint previous = path.get(0);
+        int previous_mapID = previous.getY() < 4150 && previous.getY() > 2500 ? 0 : -1;
 
         List<WorldPoint> optimized_path;
 
         for (int i = 1; i < path.size(); i++) {
             current = path.get(i);
             dist = current.distanceTo(previous);
-            if ((current.getPlane() != previous.getPlane()) || (dist > 1) || (i == path.size() - 1)
-            ) {
-                mapID = previous.getY() < 4150 && previous.getY() > 2500 ? 0 : -1;
+            if ((current.getPlane() != previous.getPlane()) || (dist > 1) || (i == path.size() - 1)) {
+                // Change mapID if y coordinate exceeds base map
+                mapID = current.getY() < 4150 && current.getY() > 2500 ? 0 : -1;
+                // Include last tile in the last path segment
                 end_index = i != path.size() - 1 ? i : i + 1;
                 optimized_path = optimizePath(new ArrayList<>(path.subList(start_index, end_index)));
-                path_components.add(new PathWithPlaneMapID(previous.getPlane(), mapID, false, optimized_path));
-                if ((dist < 1000) && (i != path.size() - 1)) {
-                    path_components.add(new PathWithPlaneMapID(previous.getPlane(), mapID, true, new ArrayList<>(path.subList(i-1, i+1))));
+                path_components.add(new PathWithPlaneMapID(previous.getPlane(), previous_mapID, false, optimized_path));
+                // Only draw transport line if mapID and plane are the same at both ends
+                if ((previous_mapID == mapID) && (previous.getPlane() == current.getPlane())) {
+                    path_components.add(new PathWithPlaneMapID(previous.getPlane(), previous_mapID, true, new ArrayList<>(path.subList(i-1, i+1))));
                 }
                 start_index = i;
+                previous_mapID = mapID;
             }
             previous = current;
         }
