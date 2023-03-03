@@ -24,6 +24,8 @@ import shortestpath.ShortestPathConfig;
 import shortestpath.ShortestPathPlugin;
 import shortestpath.Transport;
 
+import static java.lang.Math.abs;
+
 public class PathfinderConfig {
     private static final WorldArea WILDERNESS_ABOVE_GROUND = new WorldArea(2944, 3523, 448, 448, 0);
     private static final WorldArea WILDERNESS_UNDERGROUND = new WorldArea(2944, 9918, 320, 442, 0);
@@ -172,10 +174,10 @@ public class PathfinderConfig {
         int plane;
         int diff_x;
         int diff_y;
-        boolean new_component;
+        boolean new_component = true;
 
         WorldPoint last = path.get(0);
-        int last_plane = last.getPlane();
+        int last_last_plane = 0;
         int last_diff_x = 0;
         int last_diff_y = 0;
 
@@ -183,19 +185,25 @@ public class PathfinderConfig {
             diff_x = point.getX() - last.getX();
             diff_y = point.getY() - last.getY();
             plane = point.getPlane();
-            new_component = (plane != last_plane) || (diff_x > 1000) || (diff_y > 1000);
-            if ((diff_x != last_diff_x) || (diff_y != last_diff_y) || new_component) {
+            if (new_component) {
+                current_path = new ArrayList<>();
                 int[] coords = {last.getX(), last.getY()};
                 current_path.add(coords);
+                new_component = false;
+            } else {
+                new_component = (plane != last.getPlane()) || (abs(diff_x) > 1000) || (abs(diff_y) > 1000);
+                if ((diff_x != last_diff_x) || (diff_y != last_diff_y) || new_component) {
+                    int[] coords = {last.getX(), last.getY()};
+                    current_path.add(coords);
+                }
+                if (new_component) {
+                    path_components.add(new ExportPath(last_last_plane, current_path));
+                }
             }
-            if (new_component) {
-                path_components.add(new ExportPath(last.getPlane(), current_path));
-                current_path = new ArrayList<>();
-            }
+            last_last_plane = last.getPlane();
             last = point;
             last_diff_x = diff_x;
             last_diff_y = diff_y;
-            last_plane = point.getPlane();
         }
         int[] coords = {last.getX(), last.getY()};
         current_path.add(coords);
