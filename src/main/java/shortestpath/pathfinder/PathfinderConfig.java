@@ -217,7 +217,7 @@ public class PathfinderConfig {
                 optimized_path = optimizePath(new ArrayList<>(path.subList(start_index, end_index)));
                 path_components.add(new PathWithPlaneMapID(previous.getPlane(), previous_mapID, false, optimized_path));
                 // Only draw transport line if mapID and plane are the same at both ends
-                if ((previous_mapID == mapID) && (previous.getPlane() == current.getPlane())) {
+                if ((previous_mapID == mapID) && (previous.getPlane() == current.getPlane()) && (i != path.size() - 1)) {
                     path_components.add(new PathWithPlaneMapID(previous.getPlane(), previous_mapID, true, new ArrayList<>(path.subList(i-1, i+1))));
                 }
                 start_index = i;
@@ -234,7 +234,7 @@ public class PathfinderConfig {
         for (PathWithPlaneMapID path_component : calculated_path) {
             out_string.append("{{Map|");
             for (WorldPoint coordinate : path_component.path) {
-                out_string.append(String.format("%d,%d|", coordinate.getX(), coordinate.getY()));
+                out_string.append(String.format("%.1f,%.1f|", coordinate.getX() + 0.5, coordinate.getY() + 0.5));
             }
             out_string.append(String.format("mapID=%d|plane=%d|mtype=line}}\n", path_component.mapID, path_component.plane));
         }
@@ -273,8 +273,8 @@ public class PathfinderConfig {
             JsonArray coordinates = new JsonArray();
             for (WorldPoint coordinate : path_component.path) {
                 JsonArray coordinate_array = new JsonArray(2);
-                coordinate_array.add(coordinate.getX());
-                coordinate_array.add(coordinate.getY());
+                coordinate_array.add(coordinate.getX() + 0.5);
+                coordinate_array.add(coordinate.getY() + 0.5);
                 coordinates.add(coordinate_array);
             }
             geometry.addProperty("type", "LineString");
